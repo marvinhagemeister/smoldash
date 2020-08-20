@@ -5,7 +5,11 @@ Lodash is an amazing utility library for JavaScript, but with recent additions t
 Supported functions:
 
 - `_.at`
+- `_.clone`
+- `_.cloneDeep`
+- `_.compact`
 - `_.flatten`
+- `_.flow`
 - `_.forEach`
 - `_.get`
 - `_.has`
@@ -13,9 +17,13 @@ Supported functions:
 - `_.indexOf`
 - `_.isEmpty`
 - `_.kebabCase`
+- `_.merge`
+- `_.once`
 - `_.pickBy`
 - `_.sortBy`
 - `_.take`
+- `_.uniqBy`
+- `_.uniqueId`
 
 ## Installation
 

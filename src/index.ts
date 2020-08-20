@@ -176,3 +176,148 @@ export function indexOf<T>(arr: T[], value: T, startIndex = 0) {
 export function flatten(arr: any[]): any[] {
 	return arr.reduce((acc, val) => acc.concat(val), []);
 }
+
+/**
+ * Remove falsy values from array
+ */
+export function compact(arr: unknown[]) {
+	return arr.filter(x => !!x);
+}
+
+/** Used to generate unique IDs. */
+const idCounter: Record<string, number> = {};
+
+/**
+ * Generates a unique ID
+ */
+export function uniqueId(prefix = "$smolldash$") {
+	const id = (idCounter[prefix] = (idCounter[prefix] || 0) + 1);
+	return "" + (prefix === "$smolldash$" ? "" : prefix) + id;
+}
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function once<T extends (...args: any[]) => any>(fn: T): T {
+	let result: ReturnType<T>;
+	let called = false;
+	return function once_wrapped(this: any, ...args: any[]) {
+		if (!called) {
+			called = true;
+			result = fn.apply(this, args);
+		}
+		return result;
+	} as any;
+}
+
+/**
+ * Create a duplicate free version of an array by a user iteratee
+ */
+export function uniqBy<T, R = any>(arr: T[], iteratee: R | ((v: T) => R)) {
+	const seen = new Map<R, T>();
+	const type = typeof iteratee;
+
+	arr.forEach(item => {
+		let key: any = iteratee;
+		if (type === "string" && item !== null && typeof item === "object") {
+			key = (item as any)[iteratee];
+		} else if (type === "function") {
+			key = (iteratee as any)(item);
+		}
+		if (!seen.has(key)) {
+			seen.set(key, item);
+		}
+	});
+
+	return Array.from(seen.values());
+}
+
+export type AnyFunction = (...args: any[]) => any;
+
+/**
+ * Pass the result of the first function to the next one.
+ */
+export function flow(...fns: AnyFunction[]) {
+	return function (this: any, ...args: any[]) {
+		let result = fns[0].apply(this, args);
+		for (let i = 1; i < fns.length; i++) {
+			result = fns[i].call(this, result);
+		}
+
+		return result;
+	};
+}
+
+/**
+ * Shallow clone of a value
+ */
+export function clone<T>(value: T): T {
+	if (Array.isArray(value)) {
+		return value.slice() as any;
+	} else if (value instanceof RegExp) {
+		return new RegExp(value.source, value.flags) as any;
+	} else if (value instanceof Set) {
+		return new Set(value) as any;
+	} else if (value instanceof Map) {
+		return new Map(value) as any;
+	} else if (value instanceof Date) {
+		return new Date(value) as any;
+	} else if (typeof value === "object" && value !== null) {
+		return { ...value };
+	}
+	return value;
+}
+
+/**
+ * Deeply clone a value
+ */
+export function cloneDeep<T>(value: T): T {
+	if (Array.isArray(value)) {
+		return value.slice().map(cloneDeep) as any;
+	} else if (value instanceof RegExp) {
+		return new RegExp(value.source, value.flags) as any;
+	} else if (value instanceof Set) {
+		const out = new Set();
+		value.forEach(v => out.add(cloneDeep(v)));
+		return out as any;
+	} else if (value instanceof Map) {
+		const out = new Map();
+		value.forEach((v, k) => out.set(k, cloneDeep(v)));
+		return out as any;
+	} else if (value instanceof Date) {
+		return new Date(value) as any;
+	} else if (typeof value === "object" && value !== null) {
+		const out: Record<string, any> = {};
+		for (const k in value) {
+			out[k] = cloneDeep(value[k]);
+		}
+		return out as any;
+	}
+
+	return value;
+}
+
+/**
+ * Deeply merge multiple objects
+ */
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function merge(...objs: object[]) {
+	const a = objs[0] as any;
+
+	for (let i = 1; i < objs.length; i++) {
+		const b = objs[i] as any;
+
+		for (const k in b) {
+			if (
+				a[k] !== null &&
+				b[k] !== null &&
+				typeof a[k] === "object" &&
+				typeof b[k] === "object"
+			) {
+				merge(a[k], b[k]);
+			} else {
+				a[k] = b[k];
+			}
+		}
+	}
+
+	return objs[0];
+}
