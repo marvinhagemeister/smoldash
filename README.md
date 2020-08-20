@@ -20,9 +20,9 @@ Supported functions:
 ## Installation
 
 ```bash
-npm install tiny-lodash
+npm install plodash
 # or via yarn
-yarn add tiny-lodash
+yarn add plodash
 ```
 
 ## License
