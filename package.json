@@ -9,7 +9,7 @@
 		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
 		"lint": "eslint src/",
 		"test": "mocha -r ts-node/register --extensions ts,tsx  --watch-files src  'src/*.test.ts' 'src/**/*.test.ts'",
-		"prepublishOnly": "npms test && npm run build"
+		"prepublishOnly": "npm test && npm run build"
 	},
 	"author": "Marvin Hagemeister <hello@marvinh.dev>",
 	"license": "MIT",
