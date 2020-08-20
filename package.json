@@ -1,6 +1,6 @@
 {
 	"name": "tiny-lodash",
-	"version": "0.0.1",
+	"version": "0.5.0",
 	"description": "A modern lodash variant for modern brosers",
 	"main": "dist/cjs/index.js",
 	"module": "dist/esm/index.js",
