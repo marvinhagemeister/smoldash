@@ -6,5 +6,5 @@
 		"declarationDir": "dist/types/",
 		"module": "ESNext"
 	},
-	"files": ["./global.d.ts", "./src/index.ts"]
+	"files": ["./src/index.ts"]
 }
