@@ -1,0 +1,79 @@
+{
+	"name": "tiny-lodash",
+	"version": "0.0.1",
+	"description": "A modern lodash variant for modern brosers",
+	"main": "dist/cjs/index.js",
+	"module": "dist/esm/index.js",
+	"types": "dist/types/index.d.ts",
+	"scripts": {
+		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
+		"lint": "eslint src/",
+		"test": "mocha -r ts-node/register --extensions ts,tsx  --watch-files src  'src/*.test.ts' 'src/**/*.test.ts'",
+		"prepublishOnly": "npms test && npm run build"
+	},
+	"author": "Marvin Hagemeister <hello@marvinh.dev>",
+	"license": "MIT",
+	"dependencies": {},
+	"devDependencies": {
+		"@types/mocha": "^8.0.2",
+		"@typescript-eslint/eslint-plugin": "^3.9.0",
+		"@typescript-eslint/parser": "^3.9.0",
+		"eslint": "^7.7.0",
+		"expect": "^26.4.1",
+		"husky": "^4.2.5",
+		"lint-staged": "^10.2.11",
+		"mocha": "^8.1.1",
+		"prettier": "^2.0.5",
+		"rimraf": "^3.0.2",
+		"ts-node": "^8.10.2",
+		"typescript": "^3.9.7"
+	},
+	"prettier": {
+		"useTabs": true,
+		"arrowParens": "avoid",
+		"trailingComma": "all"
+	},
+	"lint-staged": {
+		"**/*.{js,jsx,ts,tsx,json}": [
+			"prettier --write"
+		]
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"eslintConfig": {
+		"extends": [
+			"eslint:recommended",
+			"plugin:@typescript-eslint/eslint-recommended",
+			"plugin:@typescript-eslint/recommended"
+		],
+		"parser": "@typescript-eslint/parser",
+		"parserOptions": {
+			"ecmaFeatures": {
+				"jsx": true
+			},
+			"ecmaVersion": 2018,
+			"sourceType": "module"
+		},
+		"env": {
+			"browser": true,
+			"node": true,
+			"mocha": true
+		},
+		"rules": {
+			"@typescript-eslint/explicit-function-return-type": "off",
+			"@typescript-eslint/explicit-module-boundary-types": "off",
+			"@typescript-eslint/ban-ts-comment": "off",
+			"@typescript-eslint/no-explicit-any": "off",
+			"@typescript-eslint/no-non-null-assertion": "off",
+			"@typescript-eslint/no-unused-vars": "error",
+			"@typescript-eslint/no-var-requires": "off",
+			"@typescript-eslint/camelcase": "off",
+			"@typescript-eslint/ban-ts-ignore": "off",
+			"no-console": "error",
+			"no-mixed-spaces-and-tabs": "off"
+		}
+	}
+}
