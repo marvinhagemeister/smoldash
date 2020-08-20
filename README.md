@@ -27,4 +27,4 @@ yarn add tiny-lodash
 
 ## License
 
-MIT, see [the LICENSE file](<./(LICENSE)>)
+MIT, see [the LICENSE file](./LICENSE)
