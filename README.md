@@ -1,4 +1,4 @@
-# Tiny Lodash
+# Plodash - Tiny Lodash alternative
 
 Lodash is an amazing utility library for JavaScript that is built for the modern web.
 
