@@ -1,4 +1,4 @@
-# Smolldash - Tiny Lodash alternative
+# Smoldash - Tiny Lodash alternative
 
 Lodash is an amazing utility library for JavaScript, but with recent additions to the ECMAScript much of it can be replaced with vanilla features. This library aims to be a thinner alternative with modern browsers in mind.
 
@@ -28,9 +28,9 @@ Supported functions:
 ## Installation
 
 ```bash
-npm install smolldash
+npm install smoldash
 # or via yarn
-yarn add smolldash
+yarn add smoldash
 ```
 
 ## License

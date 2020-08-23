@@ -190,9 +190,9 @@ const idCounter: Record<string, number> = {};
 /**
  * Generates a unique ID
  */
-export function uniqueId(prefix = "$smolldash$") {
+export function uniqueId(prefix = "$smoldash$") {
 	const id = (idCounter[prefix] = (idCounter[prefix] || 0) + 1);
-	return "" + (prefix === "$smolldash$" ? "" : prefix) + id;
+	return "" + (prefix === "$smoldash$" ? "" : prefix) + id;
 }
 
 // eslint-disable-next-line @typescript-eslint/ban-types
