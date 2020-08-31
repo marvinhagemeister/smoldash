@@ -8,6 +8,7 @@ Supported functions:
 - `_.clone`
 - `_.cloneDeep`
 - `_.compact`
+- `_.find`
 - `_.flatten`
 - `_.flow`
 - `_.forEach`
