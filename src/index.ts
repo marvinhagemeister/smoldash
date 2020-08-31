@@ -321,3 +321,37 @@ export function merge(...objs: object[]) {
 
 	return objs[0];
 }
+
+/**
+ * Iterate the collection and return the element where the predicate returns true
+ */
+export function find<T>(
+	collection: T[],
+	predicate:
+		| string
+		| [string, any]
+		| Record<string, any>
+		| ((item: T) => boolean) = x => !!x,
+	fromIndex = 0,
+): T | undefined {
+	let fn;
+	if (typeof predicate === "string") {
+		fn = (item: T) => !!(item as any)[predicate];
+	} else if (Array.isArray(predicate)) {
+		fn = (item: T) => (item as any)[predicate[0]] === predicate[1];
+	} else if (typeof predicate === "object") {
+		fn = (item: T) => {
+			return Object.keys(predicate).every(
+				v => !(v in predicate) || (item as any)[v] === predicate[v],
+			);
+		};
+	} else if (typeof predicate === "function") {
+		fn = predicate;
+	}
+
+	for (let i = fromIndex; i < collection.length; i++) {
+		if ((fn as any)(collection[i])) {
+			return collection[i];
+		}
+	}
+}
