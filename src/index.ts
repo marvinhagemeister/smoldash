@@ -30,8 +30,16 @@ export function head<T>(arr: T[]): T | undefined {
 /**
  * Get multiple object or array value by paths. Example path: `a[0].b.c`
  */
-export function at(source: Record<string, unknown> | any[], paths: string[]) {
+export function at(
+	source: Record<string, unknown> | any[],
+	paths: string[] | string,
+) {
 	const out = [];
+
+	if (typeof paths === "string") {
+		paths = [paths];
+	}
+
 	for (let i = 0; i < paths.length; i++) {
 		const path = paths[i];
 		const parts = path.split(/[.[\]]/g);
@@ -298,8 +306,7 @@ export function cloneDeep<T>(value: T): T {
 /**
  * Deeply merge multiple objects
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function merge(...objs: object[]) {
+export function merge(...objs: Record<string, any>[]): Record<string, any> {
 	const a = objs[0] as any;
 
 	for (let i = 1; i < objs.length; i++) {
