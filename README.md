@@ -17,6 +17,7 @@ Supported functions:
 - `_.head`
 - `_.indexOf`
 - `_.isEmpty`
+- `_.isEqual`
 - `_.kebabCase`
 - `_.merge`
 - `_.once`
