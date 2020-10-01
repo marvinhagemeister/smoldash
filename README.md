@@ -1,5 +1,7 @@
 # Smoldash - Tiny Lodash alternative
 
+_Note: This library hasn't been battle tested yet. There may be bugs, although none have been reported so far._
+
 Lodash is an amazing utility library for JavaScript, but with recent additions to the ECMAScript much of it can be replaced with vanilla features. This library aims to be a thinner alternative with modern browsers in mind.
 
 Supported functions:
