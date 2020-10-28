@@ -1,3 +1,5 @@
+![Smoldash logo](/smoldash.svg)
+
 # Smoldash - Tiny Lodash alternative
 
 _Note: This library hasn't been battle tested yet. There may be bugs, although none have been reported so far._
