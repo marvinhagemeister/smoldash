@@ -408,3 +408,18 @@ export function isEqual<T>(a: T, b: T): boolean {
 
 	return a === b;
 }
+
+/**
+ * Generate a range of numbers
+ */
+export function range(start: number, end?: number, step = 1) {
+	if (typeof end === "undefined") {
+		end = start;
+		start = 0;
+	}
+	const result = [];
+	for (let i = start; i < end; i += step) {
+		result.push(i);
+	}
+	return result;
+}
