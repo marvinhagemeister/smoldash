@@ -26,6 +26,7 @@ Supported functions:
 - `_.merge`
 - `_.once`
 - `_.pickBy`
+- `_.range`
 - `_.sortBy`
 - `_.take`
 - `_.uniqBy`
