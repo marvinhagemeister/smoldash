@@ -5,6 +5,7 @@
 	"main": "dist/cjs/index.js",
 	"module": "dist/esm/index.js",
 	"types": "dist/types/index.d.ts",
+	
 	"scripts": {
 		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
 		"lint": "eslint src/",
@@ -42,6 +43,10 @@
 		"hooks": {
 			"pre-commit": "lint-staged"
 		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/marvinhagemeister/smoldash"
 	},
 	"eslintConfig": {
 		"extends": [
