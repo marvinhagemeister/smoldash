@@ -5,7 +5,6 @@
 	"main": "dist/cjs/index.js",
 	"module": "dist/esm/index.js",
 	"types": "dist/types/index.d.ts",
-	
 	"scripts": {
 		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
 		"lint": "eslint src/",
