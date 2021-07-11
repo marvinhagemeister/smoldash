@@ -217,9 +217,18 @@ export function once<T extends (...args: any[]) => any>(fn: T): T {
 }
 
 /**
+ * Create a duplicate free version of an array
+ */
+export function uniq<T>(arr: T[]): T[] {
+	if (!Array.isArray(arr)) return [];
+	return Array.from(new Set(arr).values());
+}
+
+/**
  * Create a duplicate free version of an array by a user iteratee
  */
 export function uniqBy<T, R = any>(arr: T[], iteratee: R | ((v: T) => R)) {
+	if (!Array.isArray(arr)) return [];
 	const seen = new Map<R, T>();
 	const type = typeof iteratee;
 
@@ -329,18 +338,13 @@ export function merge(...objs: Record<string, any>[]): Record<string, any> {
 	return objs[0];
 }
 
-/**
- * Iterate the collection and return the element where the predicate returns true
- */
-export function find<T>(
-	collection: T[],
+const createPredicate = <T>(
 	predicate:
 		| string
 		| [string, any]
 		| Record<string, any>
 		| ((item: T) => boolean) = x => !!x,
-	fromIndex = 0,
-): T | undefined {
+): ((item: T) => boolean) | undefined => {
 	let fn;
 	if (typeof predicate === "string") {
 		fn = (item: T) => !!(item as any)[predicate];
@@ -355,12 +359,117 @@ export function find<T>(
 	} else if (typeof predicate === "function") {
 		fn = predicate;
 	}
+	return fn;
+};
 
+/**
+ * Iterate the collection and return the index of the element where the predicate returns true
+ */
+export function findIndex<T>(
+	collection: T[],
+	predicate:
+		| string
+		| [string, any]
+		| Record<string, any>
+		| ((item: T) => boolean) = x => !!x,
+	fromIndex = 0,
+): number {
+	if (!Array.isArray(collection)) return -1;
+	const fn = createPredicate(predicate);
 	for (let i = fromIndex; i < collection.length; i++) {
-		if ((fn as any)(collection[i])) {
-			return collection[i];
+		if ((fn as any)(collection[i], i, collection)) {
+			return i;
 		}
 	}
+	return -1;
+}
+
+/**
+ * Iterate the collection and return the element where the predicate returns true
+ */
+export function find<T>(
+	collection: T[],
+	predicate:
+		| string
+		| [string, any]
+		| Record<string, any>
+		| ((item: T) => boolean) = x => !!x,
+	fromIndex = 0,
+): T | undefined {
+	const index = findIndex(collection, predicate, fromIndex);
+	return index < 0 ? undefined : collection[index];
+}
+
+/**
+ * Iterate the collection and return the elements where the predicate returns true
+ */
+export function filter<T>(
+	collection: T[],
+	predicate:
+		| string
+		| [string, any]
+		| Record<string, any>
+		| ((item: T) => boolean) = x => !!x,
+): T[] {
+	if (!Array.isArray(collection)) return [];
+	return collection.filter(createPredicate(predicate) as any);
+}
+
+/**
+ * Iterate the collection and return true if predicate returns true for at least one element
+ */
+export function some<T>(
+	collection: T[],
+	predicate:
+		| string
+		| [string, any]
+		| Record<string, any>
+		| ((item: T) => boolean) = x => !!x,
+): boolean {
+	return findIndex(collection, predicate) > -1;
+}
+
+/**
+ * Iterate the collection and return true if predicate returns true for all elements
+ */
+export function every<T>(
+	collection: T[],
+	predicate:
+		| string
+		| [string, any]
+		| Record<string, any>
+		| ((item: T) => boolean) = x => !!x,
+): boolean {
+	const fn = createPredicate(predicate);
+	// if we find one element which does not satisfy predicate, then return false
+	return findIndex(collection, item => !(fn as any)(item)) < 0;
+}
+
+/**
+ * Returns new collection with each element as result of it being called on iteratee function
+ */
+
+// overloaded signatures
+export function map<T, K extends keyof T>(collection: T[], iteratee: K): T[K][];
+export function map<T, Out>(
+	collection: T[],
+	iteratee?: (item: T, index: number, collection: T[]) => Out,
+): Out[];
+
+export function map<T, Out>(
+	collection: T[],
+	iteratee: string | ((item: T, index: number, collection: T[]) => Out) = x =>
+		(x as unknown) as Out,
+): Out[] {
+	if (!Array.isArray(collection)) return [];
+
+	let fn;
+	if (typeof iteratee === "string") {
+		fn = (item: T) => item[iteratee as keyof T];
+	} else if (typeof iteratee === "function") {
+		fn = iteratee;
+	}
+	return collection.map(fn as any);
 }
 
 /**
@@ -422,4 +531,51 @@ export function range(start: number, end?: number, step = 1) {
 		result.push(i);
 	}
 	return result;
+}
+
+/**
+ * Creates object to items in collection using keys from iteratee
+ */
+export function keyBy<T, K extends keyof T, MapKey extends string | number>(
+	collection: T[],
+	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
+): { [key in MapKey]: T } {
+	if (!Array.isArray(collection)) return {} as { [key in MapKey]: T };
+
+	let fn: (item: T, index: number, collection: T[]) => MapKey;
+	if (typeof iteratee === "string") {
+		fn = (item: T) =>
+			(item[(iteratee as unknown) as keyof T] as unknown) as MapKey;
+	} else if (typeof iteratee === "function") {
+		fn = iteratee;
+	}
+	return collection.reduce((accumulator, item, index) => {
+		const key = fn(item, index, collection);
+		accumulator[key] = item;
+		return accumulator;
+	}, {} as { [key in MapKey]: T });
+}
+
+/**
+ * Creates object to items in collection using keys from iteratee
+ */
+export function groupBy<T, K extends keyof T, MapKey extends string | number>(
+	collection: T[],
+	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
+): { [key in MapKey]: T[] } {
+	if (!Array.isArray(collection)) return {} as { [key in MapKey]: T[] };
+
+	let fn: (item: T, index: number, collection: T[]) => MapKey;
+	if (typeof iteratee === "string") {
+		fn = (item: T) =>
+			(item[(iteratee as unknown) as keyof T] as unknown) as MapKey;
+	} else if (typeof iteratee === "function") {
+		fn = iteratee;
+	}
+	return collection.reduce((accumulator, item, index) => {
+		const key = fn(item, index, collection);
+		if (!accumulator[key]) accumulator[key] = [];
+		accumulator[key].push(item);
+		return accumulator;
+	}, {} as { [key in MapKey]: T[] });
 }
