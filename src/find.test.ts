@@ -12,6 +12,12 @@ describe("find", () => {
 		expect(find([1, 2, 3], n => n >= 2)).toEqual(2);
 	});
 
+	it("should not throw on non-array", () => {
+		expect(find(null as any)).toEqual(undefined);
+		expect(find(undefined as any)).toEqual(undefined);
+		expect(find("test" as any)).toEqual(undefined);
+	});
+
 	it("should find from index", () => {
 		expect(find([1, 3, 2], v => v < 3, 1)).toEqual(2);
 	});
