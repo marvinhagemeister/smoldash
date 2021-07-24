@@ -13,6 +13,10 @@
 		"./package.json": "./package.json",
 		"./": "./"
 	},
+	"files": [
+		"dist/",
+		"smoldash.svg"
+	],
 	"scripts": {
 		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && ts-node tools/postbuild.ts",
 		"lint": "eslint src/",
