@@ -5,8 +5,20 @@
 	"main": "dist/cjs/index.js",
 	"module": "dist/esm/index.js",
 	"types": "dist/types/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/esm/index.mjs",
+			"require": "./dist/cjs/index.js"
+		},
+		"./package.json": "./package.json",
+		"./": "./"
+	},
+	"files": [
+		"dist/",
+		"smoldash.svg"
+	],
 	"scripts": {
-		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
+		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && ts-node tools/postbuild.ts",
 		"lint": "eslint src/",
 		"test": "mocha -r ts-node/register --extensions ts,tsx  --watch-files src  'src/*.test.ts' 'src/**/*.test.ts'",
 		"prepublishOnly": "npm test && npm run build"
