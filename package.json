@@ -1,6 +1,6 @@
 {
 	"name": "smoldash",
-	"version": "0.10.0",
+	"version": "0.11.0",
 	"description": "A modern lodash variant for modern browsers",
 	"main": "dist/cjs/index.js",
 	"module": "dist/esm/index.js",
