@@ -1,6 +1,8 @@
 ![Smoldash logo](/smoldash.svg)
 
-# Smoldash - Tiny Lodash alternative
+[Smoldash bundle size](https://img.badgesize.io/https:/cdn.jsdelivr.net/npm/smoldash@0.11.0/dist/esm/index.min.js?compression=gzip)
+
+# Smoldash - Tiny 2kb Lodash alternative
 
 _Note: This library hasn't been battle tested yet. There may be bugs, although none have been reported so far._
 
