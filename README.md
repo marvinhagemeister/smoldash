@@ -31,15 +31,21 @@ Supported functions:
 - `_.kebabCase`
 - `_.keyBy`
 - `_.map` - only maps arrays
+- `_.mapKeys`
+- `_.mapValues`
 - `_.merge`
+- `_.omit`
 - `_.once`
+- `_.pick`
 - `_.pickBy`
 - `_.range`
+- `_.set`
 - `_.sortBy`
 - `_.some`
 - `_.take`
 - `_.uniqBy`
 - `_.uniqueId`
+- `_.unset`
 
 ## Installation
 
