@@ -1,8 +1,58 @@
+const { isArray } = Array;
+/**
+ * Support form:
+ * - 'key'
+ * - function
+ */
+const createIteratee = <T, K extends keyof T, Out>(
+	iteratee: K | ((item: T, index: number, collection: T[]) => Out),
+): ((item: T, index: number, collection: T[]) => Out) | undefined => {
+	let fn;
+	if (typeof iteratee === "string") {
+		fn = (item: T) =>
+			(item?.[(iteratee as unknown) as keyof T] as unknown) as Out;
+	} else if (typeof iteratee === "function") {
+		fn = iteratee;
+	}
+	return fn;
+};
+
+/**
+ * Supports form:
+ * - 'key' (boolean check)
+ * - ['key', 'value']
+ * - { key1: 'value1', key2: 'value2'}
+ * - function
+ */
+const createPredicate = <T>(
+	predicate:
+		| string
+		| [string, any]
+		| Record<string, any>
+		| ((item: T) => boolean) = x => !!x,
+): ((item: T) => boolean) | undefined => {
+	let fn;
+	if (typeof predicate === "string") {
+		fn = (item: T) => !!(item as any)?.[predicate];
+	} else if (isArray(predicate)) {
+		fn = (item: T) => (item as any)?.[predicate[0]] === predicate[1];
+	} else if (typeof predicate === "object") {
+		fn = (item: T) => {
+			return Object.keys(predicate).every(
+				v => !(v in predicate) || (item as any)?.[v] === predicate[v],
+			);
+		};
+	} else if (typeof predicate === "function") {
+		fn = predicate;
+	}
+	return fn;
+};
+
 /**
  * Sort objects by object properties
  */
 export function sortBy<T>(arr: T[], keys: Array<keyof T>): T[] {
-	return arr.slice().sort((a, b) => {
+	return (isArray(arr) ? arr : []).slice().sort((a, b) => {
 		for (let i = 0; i < keys.length; i++) {
 			const key = keys[i];
 			if (a[key] < b[key]) return -1;
@@ -17,14 +67,14 @@ export function sortBy<T>(arr: T[], keys: Array<keyof T>): T[] {
  * Take out the first N items of an array
  */
 export function take<T>(arr: T[], n: number): T[] {
-	return arr.slice(0, n);
+	return isArray(arr) ? arr.slice(0, n) : [];
 }
 
 /**
  * Get the first element of an array
  */
 export function head<T>(arr: T[]): T | undefined {
-	return arr[0];
+	return isArray(arr) ? arr[0] : undefined;
 }
 
 /**
@@ -41,7 +91,7 @@ export function at(
 	}
 
 	for (let i = 0; i < paths.length; i++) {
-		const path = paths[i];
+		const path: string = paths[i] || "";
 		const parts = path.split(/[.[\]]/g);
 		let haystack: any = source;
 		let found = true;
@@ -68,14 +118,14 @@ export function at(
  */
 export function get<T = any>(
 	source: Record<string, unknown> | any[],
-	path: string | Array<string | number>,
+	path: string | number | Array<string | number>,
 	defaultValue?: T,
 ): T | undefined {
-	if (Array.isArray(path)) {
+	if (isArray(path)) {
 		path = path.join(".");
 	}
 
-	const parts = path.split(/[.[\]]/g);
+	const parts = String(path).split(/[.[\]]/g);
 	let haystack: any = source;
 	for (let i = 0; i < parts.length; i++) {
 		const part = parts[i];
@@ -87,6 +137,58 @@ export function get<T = any>(
 	return haystack;
 }
 
+export function set<T = any>(
+	target: Record<string, unknown> | any[],
+	path: string | number | Array<string | number>,
+	value?: T,
+): typeof target {
+	if (isArray(path)) {
+		path = path.join(".");
+	}
+
+	const parts = String(path).split(/[.[\]]/g);
+	let obj: any = target || {};
+	for (let i = 0; i < parts.length; i++) {
+		const part = parts[i];
+		if (part === "") continue;
+		if (i === parts.length - 1) {
+			obj[part] = value;
+		} else {
+			if (!obj[part]) {
+				const isNumeric = /^\d+$/.test(String(part));
+				obj[part] = isNumeric ? [] : {};
+			}
+			obj = obj[part];
+		}
+	}
+
+	return target;
+}
+
+export function unset(
+	target: Record<string, unknown> | any[],
+	path: string | number | Array<string | number>,
+): typeof target {
+	if (isArray(path)) {
+		path = path.join(".");
+	}
+
+	const parts = String(path).split(/[.[\]]/g);
+	let obj: any = target || {};
+	for (let i = 0; obj && i < parts.length; i++) {
+		const part = parts[i];
+		if (part === "") continue;
+		if (i === parts.length - 1) {
+			delete obj[part];
+		} else {
+			obj = obj[part];
+		}
+	}
+
+	return target;
+}
+
+const empty = {};
 /**
  * Check if an item is in an object by path
  */
@@ -94,7 +196,6 @@ export function has(
 	source: Record<string, unknown> | any[],
 	path: string | Array<string | number>,
 ) {
-	const empty = "__tlodash_not_found";
 	return get(source, path, empty) !== empty;
 }
 
@@ -102,7 +203,7 @@ export function has(
  * Check if a collection (Array, Map, Set, Object) is empty
  */
 export function isEmpty(v: any) {
-	if (Array.isArray(v)) {
+	if (isArray(v)) {
 		return v.length === 0;
 	} else if (v instanceof Set || v instanceof Map) {
 		return v.size === 0;
@@ -111,6 +212,21 @@ export function isEmpty(v: any) {
 	}
 
 	return true;
+}
+
+/**
+ * Pick values out of an object by paths and return them in a new object
+ */
+export function pick<T extends Record<string, unknown>>(
+	obj: T,
+	path: string | string[],
+): Partial<T> {
+	const paths = !isArray(path) ? [path] : path;
+	const out: Partial<T> = {};
+	paths.forEach(path => {
+		set(out, path, get(obj, path));
+	});
+	return out;
 }
 
 /**
@@ -131,13 +247,29 @@ export function pickBy<T extends Record<string, unknown>>(
 }
 
 /**
+ * Omit values out of an object by paths and return them in a new object.
+ * Works only on plain objects - a simplified version of lodash omit().
+ */
+export function omit<T extends Record<string, unknown>>(
+	obj: T,
+	path: string | string[],
+): Partial<T> {
+	const paths = !isArray(path) ? [path] : path;
+	const out: Partial<T> = cloneDeep(obj);
+	paths.forEach(path => {
+		unset(out, path);
+	});
+	return out;
+}
+
+/**
  * Loop over a collection and call the callback on each item
  */
 export function forEach<T>(
 	value: T,
 	callback: (value: any, index: number | string, collection: T) => void,
 ) {
-	if (Array.isArray(value)) {
+	if (isArray(value)) {
 		value.forEach(callback as any);
 	} else if (value instanceof Set || value instanceof Map) {
 		value.forEach(callback as any);
@@ -170,6 +302,7 @@ export function kebabCase(input: string) {
  * Get index of an item in an array
  */
 export function indexOf<T>(arr: T[], value: T, startIndex = 0) {
+	if (!isArray(arr)) return [];
 	if (startIndex === 0) return arr.indexOf(value);
 
 	for (let i = startIndex; i < arr.length; i++) {
@@ -182,14 +315,14 @@ export function indexOf<T>(arr: T[], value: T, startIndex = 0) {
  * Flatten an array by a single level
  */
 export function flatten(arr: any[]): any[] {
-	return arr.reduce((acc, val) => acc.concat(val), []);
+	return (isArray(arr) ? arr : []).reduce((acc, val) => acc.concat(val), []);
 }
 
 /**
  * Remove falsy values from array
  */
 export function compact(arr: unknown[]) {
-	return arr.filter(x => !!x);
+	return (isArray(arr) ? arr : []).filter(x => !!x);
 }
 
 /** Used to generate unique IDs. */
@@ -220,19 +353,17 @@ export function once<T extends (...args: any[]) => any>(fn: T): T {
  * Create a duplicate free version of an array
  */
 export function uniq<T>(arr: T[]): T[] {
-	if (!Array.isArray(arr)) return [];
-	return Array.from(new Set(arr).values());
+	return Array.from(new Set(isArray(arr) ? arr : []).values());
 }
 
 /**
  * Create a duplicate free version of an array by a user iteratee
  */
 export function uniqBy<T, R = any>(arr: T[], iteratee: R | ((v: T) => R)) {
-	if (!Array.isArray(arr)) return [];
 	const seen = new Map<R, T>();
 	const type = typeof iteratee;
 
-	arr.forEach(item => {
+	(isArray(arr) ? arr : []).forEach(item => {
 		let key: any = iteratee;
 		if (type === "string" && item !== null && typeof item === "object") {
 			key = (item as any)[iteratee];
@@ -267,7 +398,7 @@ export function flow(...fns: AnyFunction[]) {
  * Shallow clone of a value
  */
 export function clone<T>(value: T): T {
-	if (Array.isArray(value)) {
+	if (isArray(value)) {
 		return value.slice() as any;
 	} else if (value instanceof RegExp) {
 		return new RegExp(value.source, value.flags) as any;
@@ -287,7 +418,7 @@ export function clone<T>(value: T): T {
  * Deeply clone a value
  */
 export function cloneDeep<T>(value: T): T {
-	if (Array.isArray(value)) {
+	if (isArray(value)) {
 		return value.slice().map(cloneDeep) as any;
 	} else if (value instanceof RegExp) {
 		return new RegExp(value.source, value.flags) as any;
@@ -338,30 +469,6 @@ export function merge(...objs: Record<string, any>[]): Record<string, any> {
 	return objs[0];
 }
 
-const createPredicate = <T>(
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
-): ((item: T) => boolean) | undefined => {
-	let fn;
-	if (typeof predicate === "string") {
-		fn = (item: T) => !!(item as any)[predicate];
-	} else if (Array.isArray(predicate)) {
-		fn = (item: T) => (item as any)[predicate[0]] === predicate[1];
-	} else if (typeof predicate === "object") {
-		fn = (item: T) => {
-			return Object.keys(predicate).every(
-				v => !(v in predicate) || (item as any)[v] === predicate[v],
-			);
-		};
-	} else if (typeof predicate === "function") {
-		fn = predicate;
-	}
-	return fn;
-};
-
 /**
  * Iterate the collection and return the index of the element where the predicate returns true
  */
@@ -374,7 +481,7 @@ export function findIndex<T>(
 		| ((item: T) => boolean) = x => !!x,
 	fromIndex = 0,
 ): number {
-	if (!Array.isArray(collection)) return -1;
+	if (!isArray(collection)) return -1;
 	const fn = createPredicate(predicate);
 	for (let i = fromIndex; i < collection.length; i++) {
 		if ((fn as any)(collection[i], i, collection)) {
@@ -411,8 +518,9 @@ export function filter<T>(
 		| Record<string, any>
 		| ((item: T) => boolean) = x => !!x,
 ): T[] {
-	if (!Array.isArray(collection)) return [];
-	return collection.filter(createPredicate(predicate) as any);
+	return (isArray(collection) ? collection : []).filter(
+		createPredicate(predicate) as any,
+	);
 }
 
 /**
@@ -456,20 +564,17 @@ export function map<T, Out>(
 	iteratee?: (item: T, index: number, collection: T[]) => Out,
 ): Out[];
 
-export function map<T, Out>(
+export function map<T, K extends keyof T, Out>(
 	collection: T[],
-	iteratee: string | ((item: T, index: number, collection: T[]) => Out) = x =>
+	iteratee: K | ((item: T, index: number, collection: T[]) => Out) = x =>
 		(x as unknown) as Out,
 ): Out[] {
-	if (!Array.isArray(collection)) return [];
-
-	let fn;
-	if (typeof iteratee === "string") {
-		fn = (item: T) => item[iteratee as keyof T];
-	} else if (typeof iteratee === "function") {
-		fn = iteratee;
-	}
-	return collection.map(fn as any);
+	const fn = createIteratee(iteratee) as (
+		item: T,
+		index: number,
+		collection: T[],
+	) => Out;
+	return (isArray(collection) ? collection : []).map(fn);
 }
 
 /**
@@ -478,7 +583,7 @@ export function map<T, Out>(
 export function isEqual<T>(a: T, b: T): boolean {
 	if (a === null || b === null) {
 		return a === b;
-	} else if (Array.isArray(a) && Array.isArray(b)) {
+	} else if (isArray(a) && isArray(b)) {
 		if (a.length !== b.length) {
 			return false;
 		}
@@ -540,20 +645,19 @@ export function keyBy<T, K extends keyof T, MapKey extends string | number>(
 	collection: T[],
 	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
 ): { [key in MapKey]: T } {
-	if (!Array.isArray(collection)) return {} as { [key in MapKey]: T };
-
-	let fn: (item: T, index: number, collection: T[]) => MapKey;
-	if (typeof iteratee === "string") {
-		fn = (item: T) =>
-			(item[(iteratee as unknown) as keyof T] as unknown) as MapKey;
-	} else if (typeof iteratee === "function") {
-		fn = iteratee;
-	}
-	return collection.reduce((accumulator, item, index) => {
-		const key = fn(item, index, collection);
-		accumulator[key] = item;
-		return accumulator;
-	}, {} as { [key in MapKey]: T });
+	const fn = createIteratee(iteratee) as (
+		item: T,
+		index: number,
+		collection: T[],
+	) => MapKey;
+	return (isArray(collection) ? collection : []).reduce(
+		(accumulator, item, index) => {
+			const key = fn(item, index, collection);
+			accumulator[key] = item;
+			return accumulator;
+		},
+		{} as { [key in MapKey]: T },
+	);
 }
 
 /**
@@ -563,19 +667,74 @@ export function groupBy<T, K extends keyof T, MapKey extends string | number>(
 	collection: T[],
 	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
 ): { [key in MapKey]: T[] } {
-	if (!Array.isArray(collection)) return {} as { [key in MapKey]: T[] };
+	const fn = createIteratee(iteratee) as (
+		item: T,
+		index: number,
+		collection: T[],
+	) => MapKey;
+	return (isArray(collection) ? collection : []).reduce(
+		(accumulator, item, index) => {
+			const key = fn(item, index, collection);
+			if (!accumulator[key]) accumulator[key] = [];
+			accumulator[key].push(item);
+			return accumulator;
+		},
+		{} as { [key in MapKey]: T[] },
+	);
+}
 
-	let fn: (item: T, index: number, collection: T[]) => MapKey;
-	if (typeof iteratee === "string") {
-		fn = (item: T) =>
-			(item[(iteratee as unknown) as keyof T] as unknown) as MapKey;
-	} else if (typeof iteratee === "function") {
-		fn = iteratee;
-	}
-	return collection.reduce((accumulator, item, index) => {
-		const key = fn(item, index, collection);
-		if (!accumulator[key]) accumulator[key] = [];
-		accumulator[key].push(item);
+/**
+ * Creates object using keys from iteratee
+ */
+export function mapKeys<
+	Obj extends { [key: string]: any },
+	MapKey extends string | number
+>(
+	object: Obj,
+	iteratee: (value: Obj[keyof Obj], key: keyof Obj, collection: Obj) => MapKey,
+): { [key in MapKey & string]: Obj[keyof Obj] } {
+	if (!object || typeof object !== "object")
+		return {} as { [key in MapKey & string]: Obj[keyof Obj] };
+	return Object.entries(object).reduce((accumulator, [key, value]) => {
+		const newKey = String(iteratee(value, key, object));
+		accumulator[newKey as MapKey & string] = value;
 		return accumulator;
-	}, {} as { [key in MapKey]: T[] });
+	}, {} as { [key in MapKey & string]: Obj[keyof Obj] });
+}
+
+/**
+ * Creates object using values from iteratee
+ */
+export function mapValues<
+	Obj extends { [key: string]: { [innerKey: string]: any } },
+	Key extends keyof Obj,
+	InnerKey extends keyof Obj[Key]
+>(object: Obj, iteratee: InnerKey): { [key: string]: Obj[Key][InnerKey] };
+export function mapValues<
+	Obj extends { [key in any]: any },
+	NewV,
+	K extends keyof Obj
+>(
+	object: Obj,
+	iteratee: (value: Obj[K], key: K, collection: Obj) => NewV,
+): { [key in K]: NewV };
+
+export function mapValues<
+	Obj extends { [key in any]: any },
+	NewV,
+	K extends keyof Obj
+>(
+	object: Obj,
+	iteratee: (value: Obj[K], key: K, collection: Obj) => NewV,
+): { [key in K]: NewV } {
+	if (!object || typeof object !== "object") return {} as { [key in K]: NewV };
+	return Object.entries(object).reduce((accumulator, [key, value]) => {
+		let fn = iteratee;
+		if (typeof iteratee === "string") {
+			fn = (val: Obj[K]) => val[iteratee];
+		}
+		const newValue = fn(value as Obj[K], key as K, object);
+		accumulator[key as K] = newValue;
+		return accumulator;
+	}, {} as { [key in K]: NewV });
 }

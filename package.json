@@ -21,6 +21,7 @@
 		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && ts-node tools/postbuild.ts",
 		"lint": "eslint src/",
 		"test": "mocha -r ts-node/register --extensions ts,tsx  --watch-files src  'src/*.test.ts' 'src/**/*.test.ts'",
+		"test-one": "mocha -r ts-node/register --extensions ts,tsx",
 		"prepublishOnly": "npm test && npm run build"
 	},
 	"author": "Marvin Hagemeister <hello@marvinh.dev>",
