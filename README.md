@@ -14,6 +14,7 @@ Supported functions:
 - `_.clone`
 - `_.cloneDeep`
 - `_.compact`
+- `_.defaultsDeep` (only considers own properties)
 - `_.every`
 - `_.findIndex`
 - `_.find`
