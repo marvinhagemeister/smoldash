@@ -27,20 +27,51 @@ export function makeArray(arr: any) {
 /**
  * Support form:
  * - 'key'
+ * - ['key', value]
+ * - { 'key1': value1, 'key2': value2 }
  * - function
  */
-const createIteratee = <T, K extends keyof T, Out>(
-	iteratee: K | ((item: T, index: number, collection: T[]) => Out),
-): ((item: T, index: number, collection: T[]) => Out) | undefined => {
+// variation - "user"
+export function iteratee<T, K extends keyof T>(
+	iter: K,
+): (item: T, index: number, collection: T[]) => T[K];
+// variation - ["user", "fred"]
+export function iteratee<T, K extends keyof T>(
+	iter: [K, T[K]],
+): (item: T, index: number, collection: T[]) => boolean;
+// variation - { "user", "fred" }
+export function iteratee<T>(
+	iter: Partial<T>,
+): (item: T, index: number, collection: T[]) => boolean;
+// variation - function
+export function iteratee<T, K extends keyof T, Out>(
+	iter: (item: T, index: number, collection: T[]) => Out,
+): (item: T, index: number, collection: T[]) => Out;
+
+export function iteratee<T, K extends keyof T, Out>(
+	iter:
+		| K
+		| [K, T[K]]
+		| Partial<T>
+		| ((item: T, index: number, collection: T[]) => Out),
+): ((item: T, index: number, collection: T[]) => Out | boolean) | undefined {
 	let fn;
-	if (typeof iteratee === "string") {
+	if (typeof iter === "string") {
+		fn = (item: T) => (item?.[(iter as unknown) as keyof T] as unknown) as Out;
+	} else if (isArray(iter)) {
+		fn = (item: T) => item?.[iter[0]] === iter[1];
+	} else if (isObjectLike(iter)) {
 		fn = (item: T) =>
-			(item?.[(iteratee as unknown) as keyof T] as unknown) as Out;
-	} else if (typeof iteratee === "function") {
-		fn = iteratee;
+			Object.entries(iter).every(
+				([key, val]) => item?.[(key as unknown) as keyof T] === val,
+			);
+	} else if (typeof iter === "function") {
+		fn = iter;
 	}
 	return fn;
-};
+}
+
+const createIteratee = iteratee;
 
 /**
  * Supports form:
@@ -638,11 +669,7 @@ export function map<T, K extends keyof T, Out>(
 	iteratee: K | ((item: T, index: number, collection: T[]) => Out) = x =>
 		(x as unknown) as Out,
 ): Out[] {
-	const fn = createIteratee(iteratee) as (
-		item: T,
-		index: number,
-		collection: T[],
-	) => Out;
+	const fn = createIteratee<T, K, Out>(iteratee as any);
 	return makeArray(collection).map(fn);
 }
 
@@ -651,11 +678,7 @@ export function flatMap<T, K extends keyof T, Out>(
 	iteratee: K | ((item: T, index: number, collection: T[]) => Out) = x =>
 		(x as unknown) as Out,
 ): Out[] {
-	const fn = createIteratee(iteratee) as (
-		item: T,
-		index: number,
-		collection: T[],
-	) => Out;
+	const fn = createIteratee<T, K, Out>(iteratee as any);
 	return makeArray(collection).flatMap(fn);
 }
 
@@ -726,11 +749,7 @@ export function keyBy<T, K extends keyof T, MapKey extends string | number>(
 	collection: T[],
 	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
 ): { [key in MapKey]: T } {
-	const fn = createIteratee(iteratee) as (
-		item: T,
-		index: number,
-		collection: T[],
-	) => MapKey;
+	const fn = createIteratee<T, K, MapKey>(iteratee as any);
 	return makeArray(collection).reduce((accumulator, item, index) => {
 		const key = fn(item, index, collection);
 		accumulator[key] = item;
@@ -745,11 +764,7 @@ export function groupBy<T, K extends keyof T, MapKey extends string | number>(
 	collection: T[],
 	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
 ): { [key in MapKey]: T[] } {
-	const fn = createIteratee(iteratee) as (
-		item: T,
-		index: number,
-		collection: T[],
-	) => MapKey;
+	const fn = createIteratee<T, K, MapKey>(iteratee as any);
 	return makeArray(collection).reduce((accumulator, item, index) => {
 		const key = fn(item, index, collection);
 		if (!accumulator[key]) accumulator[key] = [];
@@ -821,14 +836,13 @@ export function mapValues<
 export function defaultsDeep(target: any, ...sources: any[]) {
 	if (isObjectLike(target)) {
 		for (let i = 0; i < sources.length; i += 1) {
-			const from = sources[i];
-			const keys = Object.keys(from);
-			for (let index = 0; index < keys.length; index += 1) {
-				const key = keys[index];
+			const entries = Object.entries(sources[i]);
+			for (let index = 0; index < entries.length; index += 1) {
+				const [key, value] = entries[index];
 				if (target[key] === undefined) {
-					target[key] = from[key];
-				} else if (isObjectLike(target[key]) && isObjectLike(from[key])) {
-					defaultsDeep(target[key], from[key]);
+					target[key] = value;
+				} else if (isObjectLike(target[key]) && isObjectLike(value)) {
+					defaultsDeep(target[key], value);
 				}
 			}
 		}
