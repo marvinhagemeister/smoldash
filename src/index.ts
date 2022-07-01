@@ -16,11 +16,8 @@ export function castArray<T>(v?: T | T[]): T[] {
 	return isArray(v) ? v : [v];
 }
 
-/**
- * Non-lodash function
- * It is to defensively create an array if not one. Almost like a constructor
- */
-export function makeArray(arr: any) {
+// Defensively create an array if not one. Almost like a constructor
+function makeArray(arr: any) {
 	return isArray(arr) ? arr : [];
 }
 
