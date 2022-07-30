@@ -17,6 +17,7 @@ describe("castArray", () => {
 	});
 	it("should cast undefined", () => {
 		expect(castArray(undefined)).toEqual([undefined]);
+		expect(castArray(undefined)).toHaveLength(1);
 	});
 	it("should cast no arguments", () => {
 		expect(castArray()).toEqual([]);

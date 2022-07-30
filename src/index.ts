@@ -17,7 +17,7 @@ export function castArray<T>(v?: T | T[]): T[] {
 }
 
 // Defensively create an array if not one. Almost like a constructor
-function makeArray(arr: any) {
+function createArray(arr: any) {
 	return isArray(arr) ? arr : [];
 }
 
@@ -28,6 +28,12 @@ function makeArray(arr: any) {
  * - { 'key1': value1, 'key2': value2 }
  * - function
  */
+export type IterateeConvertibleTypes<T, K extends keyof T, Out> =
+	| K
+	| [K, T[K]]
+	| Partial<T>
+	| ((item: T, index: number, collection: T[]) => Out);
+
 // variation - "user"
 export function iteratee<T, K extends keyof T>(
 	iter: K,
@@ -41,16 +47,13 @@ export function iteratee<T>(
 	iter: Partial<T>,
 ): (item: T, index: number, collection: T[]) => boolean;
 // variation - function
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function iteratee<T, K extends keyof T, Out>(
 	iter: (item: T, index: number, collection: T[]) => Out,
 ): (item: T, index: number, collection: T[]) => Out;
 
 export function iteratee<T, K extends keyof T, Out>(
-	iter:
-		| K
-		| [K, T[K]]
-		| Partial<T>
-		| ((item: T, index: number, collection: T[]) => Out),
+	iter: IterateeConvertibleTypes<T, K, Out>,
 ): ((item: T, index: number, collection: T[]) => Out | boolean) | undefined {
 	let fn;
 	if (typeof iter === "string") {
@@ -70,6 +73,12 @@ export function iteratee<T, K extends keyof T, Out>(
 
 const createIteratee = iteratee;
 
+export type PredicateConvertibleTypes<T> =
+	| string
+	| [string, any]
+	| Record<string, any>
+	| ((item: T) => boolean);
+
 /**
  * Supports form:
  * - 'key' (boolean check)
@@ -78,11 +87,7 @@ const createIteratee = iteratee;
  * - function
  */
 const createPredicate = <T>(
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
+	predicate: PredicateConvertibleTypes<T> = x => !!x,
 ): ((item: T) => boolean) | undefined => {
 	let fn;
 	if (typeof predicate === "string") {
@@ -102,27 +107,66 @@ const createPredicate = <T>(
 };
 
 /**
+ * Creates an array of `arr` values not included in the other given arrays.
+ * The order and references of result values are determined by the first array.
+ */
+export function difference<T>(arr: readonly T[], ...values: readonly T[][]) {
+	const uniqValues = new Set(values.flatMap(identity));
+	return createArray(arr).filter(item => !uniqValues.has(item));
+}
+
+export function intersection<T>(...arrays: readonly T[][]) {
+	const counter = new Map();
+	arrays.forEach(array => {
+		array.forEach(item => {
+			counter.set(item, (counter.get(item) || 0) + 1);
+		});
+	});
+	return Array.from(counter.entries())
+		.filter(([, count]) => count == arrays.length)
+		.map(([item]) => item);
+}
+
+/**
+ * Sort objects by object properties
+ */
+export function orderBy<T, K extends keyof T, Out>(
+	arr: T[],
+	iteratees: IterateeConvertibleTypes<T, K, Out>[],
+	orders?: ("asc" | "desc")[],
+): T[] {
+	const normalizedIteratees = iteratees.map((item: any) =>
+		iteratee<T, K, Out>(item),
+	);
+	return createArray(arr)
+		.slice()
+		.sort((a: any, b: any) => {
+			for (let i = 0; i < normalizedIteratees.length; i++) {
+				const itemA = normalizedIteratees[i](a, -1, arr);
+				const itemB = normalizedIteratees[i](b, -1, arr);
+				let order = orders?.[i];
+				if (order !== "asc" && order !== "desc") {
+					order = "asc";
+				}
+				if (itemA === itemB) continue;
+				return (itemA < itemB ? -1 : 1) * (order == "desc" ? -1 : 1);
+			}
+			return 0;
+		});
+}
+
+/**
  * Sort objects by object properties
  */
 export function sortBy<T>(arr: T[], keys: Array<keyof T>): T[] {
-	return makeArray(arr)
-		.slice()
-		.sort((a, b) => {
-			for (let i = 0; i < keys.length; i++) {
-				const key = keys[i];
-				if (a[key] < b[key]) return -1;
-				else if (a[key] > b[key]) return 1;
-			}
-
-			return 0;
-		});
+	return orderBy(arr, keys);
 }
 
 /**
  * Take out the first N items of an array
  */
 export function take<T>(arr: T[], n: number): T[] {
-	return makeArray(arr).slice(0, n);
+	return createArray(arr).slice(0, n);
 }
 
 /**
@@ -130,14 +174,43 @@ export function take<T>(arr: T[], n: number): T[] {
  */
 // TODO: What value is this?
 export function head<T>(arr: T[]): T | undefined {
-	return makeArray(arr)[0];
+	return createArray(arr)[0];
 }
-
+/**
+ * Gets all but the last element of array.
+ */
+export function initial<T>(arr: T[]): T[] {
+	return take(arr, -1);
+}
 /**
  * Get the last element of an array
  */
 export function last<T>(arr: T[]): T | undefined {
-	return makeArray(arr)[arr.length - 1];
+	return createArray(arr)[arr.length - 1];
+}
+/**
+ * Reverses array so that the first element becomes the last, the second element becomes the second to last, and so on.
+ * Unlike lodash this does not mutate array.
+ */
+export function reverse<T>(arr: T[]): T[] {
+	return createArray(arr).slice().reverse();
+}
+
+/**
+ * Converts all elements in array into a string separated by separator.
+ */
+export function join<T>(arr: T[], separator?: string) {
+	return createArray(arr).join(separator);
+}
+/**
+ * Splits string by separator.
+ */
+export function split(
+	string: string,
+	separator: string | RegExp,
+	limit?: number,
+) {
+	return string.split(separator, limit);
 }
 
 /**
@@ -302,12 +375,35 @@ export function omit<T extends Record<string, unknown>>(
 	obj: T,
 	path: string | string[],
 ): Partial<T> {
+	if (!obj) return {};
 	const paths = !isArray(path) ? [path] : path;
-	const out: Partial<T> = cloneDeep(obj);
+	const isDeep = paths.some(path => /[.[\]]/.test(path));
+	const out: Partial<T> = isDeep ? cloneDeep(obj) : { ...obj }; // lodash does a deep clone only for deep paths
 	paths.forEach(path => {
 		unset(out, path);
 	});
 	return out;
+}
+
+/**
+ * This method creates an object composed of the own and inherited numerable string keyed
+ * properties of object that predicate doesn't return truthy for.
+ * Works only on plain objects - a simplified version of lodash omit().
+ */
+export function omitBy<T extends Record<string, unknown>, K extends keyof T>(
+	obj: T,
+	predicate: (item: T[K], key: K, obj: T) => boolean = () => true,
+): Partial<T> {
+	if (!obj) return {};
+	const fn = createPredicate(predicate);
+	const out: Partial<T> = {};
+	for (const key in obj) {
+		const value = obj[key];
+		if (!(fn as any)(value, key, obj)) {
+			out[key] = value; // lodash doesn't do a deep clone
+		}
+	}
+	return out as any;
 }
 
 /**
@@ -369,7 +465,7 @@ export function includes<T>(arr: T[], value: T, startIndex = 0): boolean {
  */
 // TODO: Compress this or remove it
 export function slice<T>(arr: T[], startIndex: number, endIndex?: number): T[] {
-	return makeArray(arr).slice(startIndex, endIndex);
+	return createArray(arr).slice(startIndex, endIndex);
 }
 
 /**
@@ -377,14 +473,14 @@ export function slice<T>(arr: T[], startIndex: number, endIndex?: number): T[] {
  */
 // TODO: Compress this or remove it
 export function flatten(arr: any) {
-	return makeArray(arr).flatMap(x => x);
+	return createArray(arr).flatMap(x => x);
 }
 
 /**
  * Concat values into array like native Array.prototype.concat
  */
 export function chunk(arr: any[], size = 1) {
-	arr = makeArray(arr);
+	arr = createArray(arr);
 	const chunks = [];
 	for (let i = 0; i < arr.length; i += size) {
 		chunks.push(arr.slice(i, i + size));
@@ -397,14 +493,14 @@ export function chunk(arr: any[], size = 1) {
  */
 // TODO: Compress this or remove it
 export function concat(arr: any[], ...args: any[]) {
-	return makeArray(arr).concat(...args);
+	return createArray(arr).concat(...args);
 }
 
 /**
  * Remove falsy values from array
  */
 export function compact(arr: unknown[]) {
-	return makeArray(arr).filter(x => !!x);
+	return createArray(arr).filter(x => !!x);
 }
 
 /* Used to generate unique IDs. */
@@ -435,7 +531,7 @@ export function once<T extends (...args: any[]) => any>(fn: T): T {
  * Create a duplicate free version of an array
  */
 export function uniq<T>(arr: T[]): T[] {
-	return Array.from(new Set(makeArray(arr)).values());
+	return Array.from(new Set(createArray(arr)).values());
 }
 
 /**
@@ -445,7 +541,7 @@ export function uniqBy<T, R = any>(arr: T[], iteratee: R | ((v: T) => R)) {
 	const seen = new Map<R, T>();
 	const type = typeof iteratee;
 
-	makeArray(arr).forEach(item => {
+	createArray(arr).forEach(item => {
 		let key: any = iteratee;
 		if (type === "string" && isObjectLike(item)) {
 			key = (item as any)[iteratee];
@@ -500,6 +596,8 @@ export function clone<T>(value: T): T {
  * Deeply clone a value
  */
 export function cloneDeep<T>(value: T): T {
+	// Can't use structuredClone native function yet as it is not available in workers
+	// nor in currently 'live' Safari versions
 	if (isArray(value)) {
 		return value.slice().map(cloneDeep) as any;
 	} else if (value instanceof RegExp) {
@@ -551,11 +649,7 @@ export function merge(...objs: Record<string, any>[]): Record<string, any> {
  */
 export function findIndex<T>(
 	collection: T[],
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
+	predicate: PredicateConvertibleTypes<T> = x => !!x,
 	fromIndex = 0,
 ): number {
 	if (!isArray(collection)) return -1;
@@ -573,11 +667,7 @@ export function findIndex<T>(
  */
 export function findLastIndex<T>(
 	collection: T[],
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
+	predicate: PredicateConvertibleTypes<T> = x => !!x,
 	fromIndex = collection.length - 1,
 ): number {
 	if (!isArray(collection)) return -1;
@@ -595,11 +685,7 @@ export function findLastIndex<T>(
  */
 export function find<T>(
 	collection: T[],
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
+	predicate: PredicateConvertibleTypes<T> = x => !!x,
 	fromIndex = 0,
 ): T | undefined {
 	const index = findIndex(collection, predicate, fromIndex);
@@ -611,13 +697,9 @@ export function find<T>(
  */
 export function filter<T>(
 	collection: T[],
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
+	predicate: PredicateConvertibleTypes<T> = x => !!x,
 ): T[] {
-	return makeArray(collection).filter(createPredicate(predicate) as any);
+	return createArray(collection).filter(createPredicate(predicate) as any);
 }
 
 /**
@@ -625,11 +707,7 @@ export function filter<T>(
  */
 export function some<T>(
 	collection: T[],
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
+	predicate: PredicateConvertibleTypes<T> = x => !!x,
 ): boolean {
 	return findIndex(collection, predicate) > -1;
 }
@@ -639,15 +717,46 @@ export function some<T>(
  */
 export function every<T>(
 	collection: T[],
-	predicate:
-		| string
-		| [string, any]
-		| Record<string, any>
-		| ((item: T) => boolean) = x => !!x,
+	predicate: PredicateConvertibleTypes<T> = x => !!x,
 ): boolean {
 	const fn = createPredicate(predicate);
 	// if we find one element which does not satisfy predicate, then return false
 	return findIndex(collection, item => !(fn as any)(item)) < 0;
+}
+
+/**
+ * Reduces collection to a value which is the accumulated result of running each element in collection thru iteratee
+ */
+export function reduce<T, K extends keyof T, Out>(
+	collection: T[],
+	iteratee: K | ((item: T, index: number, collection: T[]) => unknown) = (
+		x: T,
+	) => x as unknown,
+	accumulator: Out,
+): Out {
+	const fn = createIteratee<T, K>(iteratee as any);
+	return createArray(collection).reduce(fn as any, accumulator);
+}
+
+/**
+ * Sums up the result of iteratee over a collection
+ * (iteratee derives computes its value for each item of the collection)
+ */
+export function sumBy<
+	T extends { [Key: string | number]: number },
+	K extends keyof T
+>(
+	collection: T[],
+	iteratee: K | ((item: T, index: number, collection: T[]) => number) = (
+		x: T,
+	) => (x as unknown) as number,
+): number {
+	const fn = createIteratee<T, K>(iteratee as any);
+	return createArray(collection).reduce(
+		(sum: number, item, index, arr) =>
+			sum + ((fn(item, index, arr) as unknown) as number),
+		0,
+	);
 }
 
 /**
@@ -667,7 +776,7 @@ export function map<T, K extends keyof T, Out>(
 		(x as unknown) as Out,
 ): Out[] {
 	const fn = createIteratee<T, K, Out>(iteratee as any);
-	return makeArray(collection).map(fn);
+	return createArray(collection).map(fn);
 }
 
 export function flatMap<T, K extends keyof T, Out>(
@@ -676,7 +785,7 @@ export function flatMap<T, K extends keyof T, Out>(
 		(x as unknown) as Out,
 ): Out[] {
 	const fn = createIteratee<T, K, Out>(iteratee as any);
-	return makeArray(collection).flatMap(fn);
+	return createArray(collection).flatMap(fn);
 }
 
 /**
@@ -747,7 +856,7 @@ export function keyBy<T, K extends keyof T, MapKey extends string | number>(
 	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
 ): { [key in MapKey]: T } {
 	const fn = createIteratee<T, K, MapKey>(iteratee as any);
-	return makeArray(collection).reduce((accumulator, item, index) => {
+	return createArray(collection).reduce((accumulator, item, index) => {
 		const key = fn(item, index, collection);
 		accumulator[key] = item;
 		return accumulator;
@@ -762,7 +871,7 @@ export function groupBy<T, K extends keyof T, MapKey extends string | number>(
 	iteratee: K | ((item: T, index: number, collection: T[]) => MapKey),
 ): { [key in MapKey]: T[] } {
 	const fn = createIteratee<T, K, MapKey>(iteratee as any);
-	return makeArray(collection).reduce((accumulator, item, index) => {
+	return createArray(collection).reduce((accumulator, item, index) => {
 		const key = fn(item, index, collection);
 		if (!accumulator[key]) accumulator[key] = [];
 		accumulator[key].push(item);

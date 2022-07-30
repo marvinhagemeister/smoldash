@@ -20,6 +20,7 @@
 	"scripts": {
 		"build": "rimraf dist/ && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && ts-node tools/postbuild.ts",
 		"lint": "eslint src/",
+		"lint-fix": "eslint --fix src/",
 		"test": "mocha -r ts-node/register --extensions ts,tsx  --watch-files src  'src/*.test.ts' 'src/**/*.test.ts'",
 		"test-one": "mocha -r ts-node/register --extensions ts,tsx",
 		"prepublishOnly": "npm test && npm run build"
@@ -29,9 +30,9 @@
 	"dependencies": {},
 	"devDependencies": {
 		"@types/mocha": "^8.0.2",
-		"@typescript-eslint/eslint-plugin": "^3.9.0",
-		"@typescript-eslint/parser": "^3.9.0",
-		"eslint": "^7.7.0",
+		"@typescript-eslint/eslint-plugin": "^5.31.0",
+		"@typescript-eslint/parser": "^5.31.0",
+		"eslint": "^8.20.0",
 		"expect": "^26.4.1",
 		"husky": "^4.2.5",
 		"lint-staged": "^10.2.11",
