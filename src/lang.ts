@@ -25,6 +25,10 @@ export function isObject(v: any) {
 	return v != null && (type == "object" || type == "function");
 }
 
+export function isObjectLike(val: any) {
+	return val != null && typeof val == "object";
+}
+
 export function isUndefined(v: any) {
 	return v === undefined;
 }

@@ -1,10 +1,7 @@
+import { isObjectLike } from "./lang";
 export * from "./lang";
 
 const { isArray } = Array;
-
-export function isObjectLike(val: any) {
-	return val !== null && typeof val === "object";
-}
 
 export function identity<T>(v: T): T {
 	return v;
