@@ -11,6 +11,8 @@ Lodash is an amazing utility library for JavaScript, but with recent additions t
 Supported functions:
 
 - `_.at`
+- `_.camelCase`
+- `_.capitalize`
 - `_.castArray`
 - `_.chunk`
 - `_.clone`
@@ -62,11 +64,14 @@ Supported functions:
 - `_.reverse`
 - `_.set`
 - `_.slice`
+- `_.snakeCase`
 - `_.some`
 - `_.sortBy`
 - `_.split`
+- `_.startCase`
 - `_.sumBy`
 - `_.take`
+- `_.upperFirst`
 - `_.uniq`
 - `_.uniqBy`
 - `_.uniqueId`

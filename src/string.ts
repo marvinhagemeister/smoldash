@@ -41,7 +41,7 @@ export function kebabCase(input: string) {
 }
 
 /**
- * Convert camel or snake cased string to start case
+ * Convert string to start case
  */
 export function startCase(val: string) {
 	return (
@@ -58,12 +58,18 @@ export function startCase(val: string) {
 	);
 }
 
+/**
+ * Capitalizes first letter and lower cases the rest
+ */
 export function capitalize(val: string) {
 	return String(val)
 		.toLowerCase()
 		.replace(/^./, m => m.toUpperCase());
 }
 
+/**
+ * Capitalizes first letter
+ */
 export function upperFirst(val: string) {
 	return String(val).replace(/^./, m => m.toUpperCase());
 }
