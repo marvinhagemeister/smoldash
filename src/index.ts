@@ -1,5 +1,6 @@
 import { isObjectLike } from "./lang";
 export * from "./lang";
+export * from "./string";
 
 const { isArray } = Array;
 
@@ -419,24 +420,6 @@ export function forEach<T>(
 			callback((value as any)[key], key, value);
 		});
 	}
-}
-
-/**
- * Convert string to kebab case
- */
-export function kebabCase(input: string) {
-	let out = input
-		.replace(/[-._\s]+/g, "-")
-		.replace(/[A-Z0-9]/, "-$&")
-		.replace(/[-]{2,}/, "");
-
-	if (out[0] === "-") {
-		out = out.slice(1);
-	}
-	if (out[out.length - 1] === "-") {
-		out = out.slice(0, -1);
-	}
-	return out.toLowerCase();
 }
 
 /**
