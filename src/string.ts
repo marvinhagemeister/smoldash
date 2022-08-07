@@ -57,3 +57,13 @@ export function startCase(val: string) {
 			.trim()
 	);
 }
+
+export function capitalize(val: string) {
+	return String(val)
+		.toLowerCase()
+		.replace(/^./, m => m.toUpperCase());
+}
+
+export function upperFirst(val: string) {
+	return String(val).replace(/^./, m => m.toUpperCase());
+}
