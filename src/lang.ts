@@ -29,6 +29,12 @@ export function isObjectLike(val: any) {
 	return val != null && typeof val == "object";
 }
 
+const objectPrototype = Object.getPrototypeOf({});
+export function isPlainObject(val: any) {
+	if (!isObjectLike(val)) return false;
+	return Object.getPrototypeOf(val) === objectPrototype;
+}
+
 export function isUndefined(v: any) {
 	return v === undefined;
 }
